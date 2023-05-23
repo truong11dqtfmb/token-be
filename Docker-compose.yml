@@ -1,0 +1,54 @@
+version: '3.8'
+services:
+  mysqldb:
+    image: mysql
+    container_name: mysqldb
+#    restart: unless-stopped
+    ports:
+      - "3336:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: tokenjwt
+    command: --init-file /data/application/init.sql
+    volumes:
+      - data:/var/lib/mysql
+      - ./init.sql:/data/application/init.sql
+
+  spring:
+    container_name: spring
+    build:
+      context: .
+      dockerfile: Dockerfile
+#    restart: always
+    ports:
+      - "8999:8888"
+    depends_on:
+      - mysqldb
+    environment:
+      - SPRING.DATASOURCE.URL=jdbc:mysql://mysqldb:3306/tokenjwt?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING.DATASOURCE.USERNAME=root
+      - SPRING.DATASOURCE.PASSWORD=123456
+      - SPRING.JPA.SHOW-SQL=true
+      - SPRING.JPA.PROPERTIES.HIBERNATE.FORMAT_SQL=true
+      - SPRING.JPA.HIBERNATE.DDL-AUTO=update
+      - JWT.ACCESS.SECRET=daoquoctruong
+      - JWT.ACCESS.EXPIRED=30000
+      - JWT.REFRESH.SECRET=dqt11112003
+      - JWT.REFRESH.EXPIRED=60000
+
+
+  web:
+    image: web
+    ports:
+      - "3000:80"
+
+  nginx:
+    depends_on:
+      - web
+    restart: always
+    image: web
+    ports:
+      - "80:80"
+
+volumes:
+  data:
